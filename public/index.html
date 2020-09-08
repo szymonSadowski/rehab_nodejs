@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link rel="stylesheet" type="text/css" href="styles.css">
+  <script type="text/javascript" src="http://localhost:3000/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.1.4/lib/p5.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.1.4/lib/addons/p5.sound.min.js"></script>
+  <script src="https://unpkg.com/ml5@0.4.2/dist/ml5.min.js"></script>
+  <script type="text/javascript" src="sketch.js"></script>
+</head>
+
+<body>
+  <div class="buttonDiv"> 
+    <button id="collectData" type="button" class="btn btn-primary">Collect</button>
+    <button id="createModel" type="button" class="btn btn-primary">Create Model</button>
+    <button id="trainModel" type="button" class="btn btn-primary">Train</button>
+    <form>
+      <div class="input-group input-group-sm mb-3">
+        <input id="nameBox" type="text" class="form-control" aria-label="Small" aria-describedby="inputGroup-sizing-sm" placeholder="Name of file" required>
+        <button id="saveClick" type="submit" class="btn btn-primary">Save</button>
+      </div>
+   </form>
+   <div class="form-group">
+    <label>Nazwa Cwiczenia</label>
+    <select id="exerciseSelect" class="form-control">
+
+    </select>
+  </div>
+  </div>
+</body>
+</html>
