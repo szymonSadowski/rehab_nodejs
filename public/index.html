@@ -15,22 +15,31 @@
 </head>
 
 <body>
+  <div class="menu">
+    <h1>Tworzenie modelu</h1>
   <div class="buttonDiv"> 
     <button id="collectData" type="button" class="btn btn-primary">Collect</button>
     <button id="createModel" type="button" class="btn btn-primary">Create Model</button>
     <button id="trainModel" type="button" class="btn btn-primary">Train</button>
+    <br></br>
     <form>
-      <div class="input-group input-group-sm mb-3">
-        <input id="nameBox" type="text" class="form-control" aria-label="Small" aria-describedby="inputGroup-sizing-sm" placeholder="Name of file" required>
+        <input id="nameBox" type="text" class="form-control" placeholder="Name of file" required>
+        <label>Opisz ćwiczenie</label>
+        <textarea class="form-control" id="descriptionBox" rows="3" required></textarea>
         <button id="saveClick" type="submit" class="btn btn-primary">Save</button>
-      </div>
    </form>
+   <br>
+   <h1>Wybór ćwiczenia</h1>
    <div class="form-group">
     <label>Nazwa Cwiczenia</label>
-    <select id="exerciseSelect" class="form-control">
-
+    <select id="exerciseSelect" class="form-control" onchange="changeAction(this)">
     </select>
   </div>
+  <div class="form-group">
+    <label>Opis ćwiczenia</label>
+    <textarea class="form-control" id="exerciseDescription" rows="3" readonly></textarea>
   </div>
+  </div>
+</div>
 </body>
 </html>

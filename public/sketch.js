@@ -3,13 +3,11 @@ let video;
 let poseNet;
 let pose;
 let skeleton;
-let namesSelect = []; 
 let brain;
-
 let state = 'waiting';
 let targetLabel;
 let poseLabel = "";
-
+let descriptionsList = [];
 function delay(time) {
   return new Promise((resolve, reject) => {
     if (isNaN(time)) {
@@ -20,18 +18,25 @@ function delay(time) {
   });
 }
 
+// Start the socket connection
 socket = io.connect('http://localhost:3000')
     
 socket.on('nameslist', names => {
     console.log(names);
     // adding options (from json loaded on serverside) to select on client side
-    names.forEach(element => {
+    names.forEach((element, idx) => {
         var sel = document.getElementById('exerciseSelect');
         var opt = document.createElement('option');
-        opt.appendChild( document.createTextNode(element) );
-        opt.value = 'option value'; 
+        opt.appendChild( document.createTextNode(element));
+        // set value of the select option as it's index in array
+        opt.value = [idx]; 
         sel.appendChild(opt); 
     });
+})
+socket.on('descriptionlist', descriptions => {
+  console.log(descriptions);
+  descriptionsList = descriptions;
+  // after selected name show description of exercise
 })
 if(socket) {
 function setup() {
@@ -41,19 +46,15 @@ function setup() {
     poseNet = ml5.poseNet(video, modelLoaded);
     poseNet.on('pose', gotPoses);
   
-    // Start the socket connection
-  //   socket = io.connect('http://localhost:3000')
-  
     // get buttons 
     const collectData = select('#collectData')
     const trainModel = select('#trainModel')
     const createModel = select('#createModel')
     const saveClick = select('#saveClick')
-
     // other elements
     const nameBox = select('#nameBox')
-    const exerciseSelect = select('#exerciseSelect')
-    
+    const descriptionBox = select('#descriptionBox')
+
     collectData.mousePressed(() => {
       collectClick();
     })
@@ -65,35 +66,25 @@ function setup() {
     createModel.mousePressed(() => {
         deployData();
     })
-  
+    changeAction = function(select){
+      idx = document.getElementById("exerciseSelect").action = select.value;
+      document.getElementById('exerciseDescription').value = descriptionsList[idx]
+   }
+    
     saveClick.mousePressed(() => {
         console.log(nameBox.value())
+        console.log(descriptionBox.value())
         nameOfFile = nameBox.value()
-        if(nameOfFile.length){
-            brain.saveData(nameBox.value());
+        descriptionOfFile = descriptionBox.value()
+        if(nameOfFile.length && descriptionOfFile.length){
+          brain.saveData(nameBox.value());
+          socket.emit('savedata', nameOfFile);
+          socket.emit('descriptiondata', descriptionOfFile)
         }
         else {
             console.log("Name of file is needed")
         }
     })
-    // var array = ['Select Car', 'Volvo', 'Saab', 'Mervedes', 'Audi'];
-    // console.log(namesSelect, "halo")
-    // var sEle = document.createElement('select');
-    // document.getElementsByTagName('body')[0].appendChild(sEle);
-    
-    // for (var i = 0; i < array.length; ++i) {
-    //   var oEle = document.createElement('option');
-    
-    //   if (i == 0) {
-    //     oEle.setAttribute('disabled', 'disabled');
-    //     oEle.setAttribute('selected', 'selected');
-    //   } // end of if loop
-    
-    //   var oTxt = document.createTextNode(array[i]);
-    //   oEle.appendChild(oTxt);
-    
-    //   document.getElementsByTagName('select')[0].appendChild(oEle);
-    // } // end of for loop
 
     let options = {
       inputs: 34,

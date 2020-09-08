@@ -1,20 +1,23 @@
 html, body {
-    margin: 0;
-    padding: 0;
+    padding: 5.rem;
     background-color: whitesmoke;
+    margin-left: .5rem;
+    margin-top: .3rem;
   }
   canvas {
     display: block;
   }
-  .buttonDiv {
-    margin-left: .5rem;
+  .menu{
+    margin-right: .8rem;
     float: right;
   }
-  input.form-control {
+  .nameBox {
     margin-left: .8rem;
     width: .7rem;
   }
-  
+  .saveClick {
+    margin: 0.9rem;
+  }
   input::-webkit-outer-spin-button,
   input::-webkit-inner-spin-button {
       /* display: none; <- Crashes Chrome on hover */
