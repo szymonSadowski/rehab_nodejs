@@ -7,7 +7,9 @@ let brain;
 let state = 'waiting';
 let targetLabel;
 let poseLabel = "";
+let collectLabel ="";
 let descriptionsList = [];
+let nameOfSave = "";
 function delay(time) {
   return new Promise((resolve, reject) => {
     if (isNaN(time)) {
@@ -60,11 +62,11 @@ function setup() {
     })
     
     trainModel.mousePressed(() => {
-        trainModel();
+        trainModelFromFile();
     })
   
     createModel.mousePressed(() => {
-        deployData();
+        createModelFromFile();
     })
     changeAction = function(select){
       idx = document.getElementById("exerciseSelect").action = select.value;
@@ -72,18 +74,22 @@ function setup() {
    }
     
     saveClick.mousePressed(() => {
-        console.log(nameBox.value())
-        console.log(descriptionBox.value())
-        nameOfFile = nameBox.value()
-        descriptionOfFile = descriptionBox.value()
-        if(nameOfFile.length && descriptionOfFile.length){
-          brain.saveData(nameBox.value());
-          socket.emit('savedata', nameOfFile);
-          socket.emit('descriptiondata', descriptionOfFile)
-        }
-        else {
-            console.log("Name of file is needed")
-        }
+      console.log(nameBox.value());
+      console.log(descriptionBox.value());
+      nameOfFile = nameBox.value();
+      descriptionOfFile = descriptionBox.value();
+      nameOfSave = nameOfSave.concat('data/', nameOfFile, '.json');
+      console.log(nameOfSave, " tu jest name of save")
+      if(nameOfFile.length && descriptionOfFile.length){
+        brain.saveData(nameBox.value());
+        socket.emit('savedata', nameOfFile);
+        socket.emit('descriptiondata', descriptionOfFile)
+        document.getElementById('nameBox').value = '';
+        document.getElementById('descriptionBox').value = '';
+      }
+      else {
+        console.log("Name of file is needed")
+      }
     })
 
     let options = {
@@ -98,28 +104,31 @@ function setup() {
 }
 
 async function collectClick(){
-  
-  console.log('presskey');
-  targetLabel = key;
-  
-  console.log(targetLabel);
+  idx = document.getElementById('numberOfParts').value;
+  console.log("collecting", idx)
+  collectLabel = "prepere your postion";
   await delay(3000);
-  console.log('prepere');
-
-  await delay(3000);
-  console.log('collecting');
-  state = 'collecting';
-
-  await delay(6000);
-  console.log('not collecting');
-  state = 'waiting';
+  for(i=1; i<=idx; i++) {
+    targetLabel = i;
+    collectLabel = i + "-part of exercise";
+    await delay(3000);
+    collectLabel = "collecting";
+    state = 'collecting';
+    await delay(8000);
+    console.log('not collecting');
+    state = 'waiting';
+  }
+  collectLabel = "";
 }
 
-function trainModel() {
+function trainModelFromFile() {
+  pathToModel = pathToModel.concat('models/', nameOfFile, '/model.json');
+  pathToMetaData = pathToMetaData.concat('models/', nameOfFile, '/model_meta.json');
+  pathToWeights = pathToWeights.concat('models/', nameOfFile, 'model.weights.json');
   const modelInfo = {
-    model: 'model/model.json',
-    metadata: 'model/model_meta.json',
-    weights: 'model/model.weights.bin',
+    model: pathToModel,
+    metadata: pathToMetaData,
+    weights: pathToWeights,
   };
   brain.load(modelInfo, brainLoaded);
 }
@@ -154,8 +163,9 @@ function brainLoaded() {
   console.log('pose classification ready!');
   classifyPose();
 }
-function createModel() {
-  brain.loadData('test.json', dataReady);
+function createModelFromFile() {
+    console.log(nameOfSave, " tu tez powinno")
+    brain.loadData(nameOfSave, dataReady);
 }
 
 function dataReady(){
@@ -222,4 +232,5 @@ function draw() {
   textSize(50);
   textAlign(CENTER, CENTER);
   text(poseLabel, width / 2, height / 2);
+  text(collectLabel, width / 2, height / 2);
 }

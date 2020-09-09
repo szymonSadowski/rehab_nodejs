@@ -17,18 +17,31 @@
 <body>
   <div class="menu">
     <h1>Tworzenie modelu</h1>
-  <div class="buttonDiv"> 
-    <button id="collectData" type="button" class="btn btn-primary">Collect</button>
-    <button id="createModel" type="button" class="btn btn-primary">Create Model</button>
-    <button id="trainModel" type="button" class="btn btn-primary">Train</button>
-    <br></br>
+  <div class="form-group"> 
+    <label>Z ilu pozycji sklada się twoje ćwiczenie (min. 2; max. 10)</label>
+    <select id="numberOfParts" class="form-control">
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+      <option value="7">7</option>
+      <option value="8">8</option>
+      <option value="9">9</option>
+      <option value="10">10</option>
+    </select>
+  </div>
+  <button id="collectData" type="button" class="btn btn-primary">Collect</button>
+  <div class="form-group">
     <form>
-        <input id="nameBox" type="text" class="form-control" placeholder="Name of file" required>
+        <label>Nazwa Cwiczenia</label>
+        <input id="nameBox" type="text" class="form-control" required>
         <label>Opisz ćwiczenie</label>
         <textarea class="form-control" id="descriptionBox" rows="3" required></textarea>
-        <button id="saveClick" type="submit" class="btn btn-primary">Save</button>
    </form>
-   <br>
+  </div>
+  <button id="saveClick" type="submit" class="btn btn-primary">Save</button>
+  <button id="createModel" type="button" class="btn btn-primary">Create Model</button>
    <h1>Wybór ćwiczenia</h1>
    <div class="form-group">
     <label>Nazwa Cwiczenia</label>
@@ -39,6 +52,7 @@
     <label>Opis ćwiczenia</label>
     <textarea class="form-control" id="exerciseDescription" rows="3" readonly></textarea>
   </div>
+  <button id="trainModel" type="button" class="btn btn-primary">Train</button>
   </div>
 </div>
 </body>
