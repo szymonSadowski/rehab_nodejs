@@ -8,9 +8,12 @@
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
   <link rel="stylesheet" type="text/css" href="styles.css">
   <script type="text/javascript" src="http://localhost:3000/socket.io/socket.io.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5@1.1.4/lib/p5.min.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/p5@1.1.4/lib/p5.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5@1.1.4/lib/addons/p5.sound.min.js"></script>
-  <script src="https://unpkg.com/ml5@0.4.2/dist/ml5.min.js"></script>
+  <script src="https://unpkg.com/ml5@0.4.2/dist/ml5.min.js"></script> -->
+  <script src="p5.js"></script>
+  <script src="p5.sound.min.js"></script>
+  <script src="ml5.min.js"></script>
   <script type="text/javascript" src="sketch.js"></script>
 </head>
 
@@ -53,6 +56,7 @@
     <textarea class="form-control" id="exerciseDescription" rows="3" readonly></textarea>
   </div>
   <button id="trainModel" type="button" class="btn btn-primary">Train</button>
+  <button id="stopTrainModel" type="button" class="btn btn-primary">Stop Training</button>
   </div>
 </div>
 </body>

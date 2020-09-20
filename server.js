@@ -32,16 +32,15 @@ function getDescriptions() {
       }); 
       return descriptions
 }
-// get the number of elements in name key
-function getLenght() {
-    let lenght = 0;
+// get number Of outputs (to load model)
+function getOutputs() {
+    let outputs = [];
     let rawdata= fs.readFileSync('./assets/test.json');
-    let name = JSON.parse(rawdata);
-    name['name'].forEach(element => { 
-        lenght++;
+    let output = JSON.parse(rawdata);
+    output['output'].forEach(element => { 
+        outputs.push(element)
       }); 
-    lenght = lenght - 1;
-    return lenght
+      return outputs
 }
 
 io.sockets.on('connection', (socket) => {
@@ -50,13 +49,16 @@ io.sockets.on('connection', (socket) => {
     // send every connection updated list of names
     let names = [];
     let descriptions = [];
-    names = getNames()
-    descriptions = getDescriptions()
-    lenghtOfArray = getLenght()
+    let outputs = [];
+    names = getNames();
+    descriptions = getDescriptions();
+    outputs = getOutputs();
     // emit to every client live list of names
     socket.emit('nameslist', names)
     // emit to every client live list of descriptions
     socket.emit('descriptionlist', descriptions)
+    // emit to every client number of outputs needed to load.brain()
+    socket.emit('numberofoutputs', outputs)
     socket.on('savedata', nameOfFile => {      
         try {    
             let rawdata= fs.readFileSync('./assets/test.json');
@@ -74,6 +76,17 @@ io.sockets.on('connection', (socket) => {
             let rawdata= fs.readFileSync('./assets/test.json');
             let obj = JSON.parse(rawdata);
             obj.description.push(descriptionOfFile);
+            fs.writeFileSync('./assets/test.json', JSON.stringify(obj))
+        } 
+        catch (err) {
+            console.error(err)
+        }
+    })
+    socket.on('numberofoutputs', numberOfOutputs => {
+        try {    
+            let rawdata= fs.readFileSync('./assets/test.json');
+            let obj = JSON.parse(rawdata);
+            obj.output.push(numberOfOutputs);
             fs.writeFileSync('./assets/test.json', JSON.stringify(obj))
         } 
         catch (err) {

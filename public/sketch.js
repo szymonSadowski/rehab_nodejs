@@ -5,11 +5,20 @@ let pose;
 let skeleton;
 let brain;
 let state = 'waiting';
+let stateOfTraining = 'training';
 let targetLabel;
 let poseLabel = "";
 let collectLabel ="";
+let numberOfOutputsList = [];
 let descriptionsList = [];
 let nameOfSave = "";
+let namesList = [];
+let nameSelected; 
+let pathToModel = "";
+let pathToMetaData = "";
+let pathToWeights = "";
+let numberOfOutputs;
+
 function delay(time) {
   return new Promise((resolve, reject) => {
     if (isNaN(time)) {
@@ -33,12 +42,18 @@ socket.on('nameslist', names => {
         // set value of the select option as it's index in array
         opt.value = [idx]; 
         sel.appendChild(opt); 
+        namesList.push(element);
     });
 })
 socket.on('descriptionlist', descriptions => {
   console.log(descriptions);
   descriptionsList = descriptions;
   // after selected name show description of exercise
+})
+socket.on('numberofoutputs', numberOfOutputs => {
+  console.log(numberOfOutputs);
+  numberOfOutputsList = numberOfOutputs;
+  // after selected name get numberOfOutputs
 })
 if(socket) {
 function setup() {
@@ -53,24 +68,49 @@ function setup() {
     const trainModel = select('#trainModel')
     const createModel = select('#createModel')
     const saveClick = select('#saveClick')
+    const stopTraining = select('#stopTrainModel')
     // other elements
     const nameBox = select('#nameBox')
     const descriptionBox = select('#descriptionBox')
 
     collectData.mousePressed(() => {
       collectClick();
-    })
+    });
     
     trainModel.mousePressed(() => {
+        stateOfTraining = "training"
         trainModelFromFile();
-    })
+    });
   
     createModel.mousePressed(() => {
         createModelFromFile();
-    })
+    });
+
+    stopTraining.mousePressed(() => {
+        stateOfTraining = "stop";
+        poseLabel = "";
+    });
+
     changeAction = function(select){
       idx = document.getElementById("exerciseSelect").action = select.value;
-      document.getElementById('exerciseDescription').value = descriptionsList[idx]
+      document.getElementById('exerciseDescription').value = descriptionsList[idx];
+      nameSelected = namesList[idx];
+      pathToModel = pathToModel.concat('models/', nameSelected, '/model.json');
+      pathToMetaData = pathToMetaData.concat('models/', nameSelected, '/model_meta.json');
+      pathToWeights = pathToWeights.concat('models/', nameSelected, '/model.weights.bin');
+      numberOfOutputs = numberOfOutputsList[idx];
+      console.log(numberOfOutputs, " numberOfOutputs")
+      let options = {
+        inputs: 34,
+        outputs: numberOfOutputs,
+        task: 'classification',
+        debug: true
+      }
+      console.log(numberOfOutputs, "tutaj drukujemy numberOfOutputs przed loadingiem ćwiczenia")
+      brain = ml5.neuralNetwork(options);
+      // pathToModel = ('./models/test/model.json');
+      // pathToMetaData  = ('./models/test/model_meta.json');
+      // pathToWeights = ('./models/test/model.weights.bin')
    }
     
     saveClick.mousePressed(() => {
@@ -79,37 +119,49 @@ function setup() {
       nameOfFile = nameBox.value();
       descriptionOfFile = descriptionBox.value();
       nameOfSave = nameOfSave.concat('data/', nameOfFile, '.json');
-      console.log(nameOfSave, " tu jest name of save")
+      numberOfOutputs = document.getElementById("numberOfParts").value
+      console.log(numberOfOutputs, "to emitujemy na socketa")
+      console.log(numberOfOutputs, " numberOfOutputs")
       if(nameOfFile.length && descriptionOfFile.length){
-        brain.saveData(nameBox.value());
-        socket.emit('savedata', nameOfFile);
-        socket.emit('descriptiondata', descriptionOfFile)
-        document.getElementById('nameBox').value = '';
-        document.getElementById('descriptionBox').value = '';
+        console.log(namesList, " namesList")
+        if(namesList.includes(nameOfFile)) {
+          alert("Ta nazwa jest już zajęta")
+        }
+        else {
+          brain.saveData(nameBox.value());
+          socket.emit('savedata', nameOfFile);
+          socket.emit('descriptiondata', descriptionOfFile);
+          sendOutputs = numberOfOutputs.toString();
+          socket.emit('numberofoutputs', sendOutputs);
+          document.getElementById('nameBox').value = '';
+          document.getElementById('descriptionBox').value = '';
+        }
       }
       else {
         console.log("Name of file is needed")
       }
     })
-
     let options = {
       inputs: 34,
-      outputs: 1,
+      outputs: numberOfOutputs,
       task: 'classification',
       debug: true
     }
     brain = ml5.neuralNetwork(options);
-  
   }
 }
 
 async function collectClick(){
   idx = document.getElementById('numberOfParts').value;
-  console.log("collecting", idx)
+  console.log("collecting", idx);
   collectLabel = "prepere your postion";
   await delay(3000);
   for(i=1; i<=idx; i++) {
-    targetLabel = i;
+    // collectLabel = "press key";
+    iAsString =  i.toString()
+    targetLabel = iAsString;
+    console.log(targetLabel, " targetLabel");
+    await delay(3000);
     collectLabel = i + "-part of exercise";
     await delay(3000);
     collectLabel = "collecting";
@@ -122,16 +174,15 @@ async function collectClick(){
 }
 
 function trainModelFromFile() {
-  pathToModel = pathToModel.concat('models/', nameOfFile, '/model.json');
-  pathToMetaData = pathToMetaData.concat('models/', nameOfFile, '/model_meta.json');
-  pathToWeights = pathToWeights.concat('models/', nameOfFile, 'model.weights.json');
+  console.log(pathToModel, " pathToModel", pathToMetaData, " pathToMetaData", pathToWeights, " pathToWeights")
   const modelInfo = {
     model: pathToModel,
     metadata: pathToMetaData,
-    weights: pathToWeights,
+    weights: pathToWeights
   };
   brain.load(modelInfo, brainLoaded);
 }
+
 function classifyPose() {
   if (pose) {
     let inputs = [];
@@ -148,27 +199,30 @@ function classifyPose() {
 }
 
 function gotResult(error, results) {
-  
-  if (results[0].confidence > 0.70) {
-    poseLabel = results[0].label.toUpperCase();
+  if(stateOfTraining == 'training') {
+    if (results[0].confidence > 0.70) {
+      poseLabel = results[0].label.toUpperCase();
+    }
+    else {
+      poseLabel = "Zle ulozenie";
+    }
+    console.log(results[0].confidence);
+    classifyPose();
   }
-  else {
-    poseLabel = "Zle ulozenie";
-  }
-  console.log(results[0].confidence);
-  classifyPose();
 }
-
+ 
 function brainLoaded() {
   console.log('pose classification ready!');
   classifyPose();
 }
 function createModelFromFile() {
-    console.log(nameOfSave, " tu tez powinno")
+    console.log(nameOfSave)
     brain.loadData(nameOfSave, dataReady);
+    // brain.loadData('data/modelTestowy.json', dataReady);
 }
 
 function dataReady(){
+  console.log("dataReady")
   brain.normalizeData()
   brain.train({epochs: 100}, finished);
 }
@@ -178,8 +232,11 @@ function finished(){
   brain.save();
 }
 
+function stopTraining() {
+  
+}
+
 function gotPoses(poses) {
-  //console.log(poses);
   if (poses.length > 0) {
     pose = poses[0].pose;
     skeleton = poses[0].skeleton;
