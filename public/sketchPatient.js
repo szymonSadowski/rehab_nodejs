@@ -65,26 +65,13 @@ if(socket) {
     poseNet.on('pose', gotPoses);
 
     // get buttons 
-    const collectData = select('#collectData')
     const trainModel = select('#trainModel')
-    const createModel = select('#createModel')
-    const saveClick = select('#saveClick')
     const stopTraining = select('#stopTrainModel')
-    // other elements
-    const nameBox = select('#nameBox')
-    const descriptionBox = select('#descriptionBox')
 
-    collectData.mousePressed(() => {
-      collectClick();
-    });
 
     trainModel.mousePressed(() => {
       stateOfTraining = "training"
       trainModelFromFile();
-    });
-
-    createModel.mousePressed(() => {
-      createModelFromFile();
     });
 
     stopTraining.mousePressed(() => {
@@ -111,34 +98,6 @@ if(socket) {
       brain = ml5.neuralNetwork(options);
     }
 
-    saveClick.mousePressed(() => {
-      console.log(nameBox.value());
-      console.log(descriptionBox.value());
-      nameOfFile = nameBox.value();
-      descriptionOfFile = descriptionBox.value();
-      nameOfSave = nameOfSave.concat('data/', nameOfFile, '.json');
-      numberOfOutputs = document.getElementById("numberOfParts").value
-      console.log(numberOfOutputs, "to emitujemy na socketa")
-      console.log(numberOfOutputs, " numberOfOutputs")
-      if (nameOfFile.length && descriptionOfFile.length) {
-        console.log(namesList, " namesList")
-        if (namesList.includes(nameOfFile)) {
-          alert("Ta nazwa jest już zajęta")
-        }
-        else {
-          brain.saveData(nameBox.value());
-          socket.emit('savedata', nameOfFile);
-          socket.emit('descriptiondata', descriptionOfFile);
-          sendOutputs = numberOfOutputs.toString();
-          socket.emit('numberofoutputs', sendOutputs);
-          document.getElementById('nameBox').value = '';
-          document.getElementById('descriptionBox').value = '';
-        }
-      }
-      else {
-        console.log("Name of file is needed")
-      }
-    })
     let options = {
       inputs: 34,
       outputs: numberOfOutputs,
@@ -147,28 +106,6 @@ if(socket) {
     }
     brain = ml5.neuralNetwork(options);
   }
-}
-
-async function collectClick(){
-  idx = document.getElementById('numberOfParts').value;
-  console.log("collecting", idx);
-  collectLabel = "prepere your postion";
-  await delay(3000);
-  for(i=1; i<=idx; i++) {
-    // collectLabel = "press key";
-    iAsString =  i.toString()
-    targetLabel = iAsString;
-    console.log(targetLabel, " targetLabel");
-    await delay(3000);
-    collectLabel = i + "-part of exercise";
-    await delay(3000);
-    collectLabel = "collecting";
-    state = 'collecting';
-    await delay(8000);
-    console.log('not collecting');
-    state = 'waiting';
-  }
-  collectLabel = "";
 }
 
 function trainModelFromFile() {
