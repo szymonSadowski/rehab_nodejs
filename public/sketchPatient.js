@@ -1,3 +1,4 @@
+/* eslint-disable valid-jsdoc */
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 let socket;
@@ -6,21 +7,30 @@ let poseNet;
 let pose;
 let skeleton;
 let brain;
-const state = 'waiting';
-let stateOfTraining = 'training';
-let targetLabel;
+// const state = 'waiting';
+let stateOfTraining = 'stop';
+// let targetLabel;
 let poseLabel = '';
-const collectLabel ='';
+// const collectLabel ='';
 let numberOfOutputsList = [];
 let descriptionsList = [];
-const nameOfSave = '';
+// const nameOfSave = '';
 const namesList = [];
 let nameSelected;
 let pathToModel = '';
 let pathToMetaData = '';
 let pathToWeights = '';
 let numberOfOutputs;
-
+// let partOfExercise;
+// let tempInput = [];
+// let poseCheck = [];
+// let check = false;
+let receivePartsGlobal = [];
+// let numberOfPartsLoaded;
+let indexImg = 1;
+/**
+ * * Utilities
+ */
 function delay(time) {
   return new Promise((resolve, reject) => {
     if (isNaN(time)) {
@@ -30,8 +40,11 @@ function delay(time) {
     }
   });
 }
+/**
+ * * Server Connection
+ * TODO CHANGE TO REST API ?
+ */
 
-// Start the socket connection
 socket = io.connect('http://localhost:3000');
 
 socket.on('nameslist', (names) => {
@@ -58,20 +71,35 @@ socket.on('numberofoutputs', (numberOfOutputs) => {
   // after selected name get numberOfOutputs
 });
 
+/**
+ * * SetUp Functions
+ */
 if (socket) {
+  // eslint-disable-next-line no-unused-vars
   function setup() {
-    createCanvas(640, 480);
+    setImage();
+    const canvasExercsie = createCanvas(640, 480);
     video = createCapture(VIDEO);
     video.hide();
     poseNet = ml5.poseNet(video, modelLoaded);
     poseNet.on('pose', gotPoses);
-
+    canvasExercsie.parent('canvasexercise');
     // get buttons
     const trainModel = select('#trainModel');
     const stopTraining = select('#stopTrainModel');
-
+    const nextImg = select('#nextImg');
+    const previousImg = select('#previousImg');
+    const playImg = select('#playImg');
 
     trainModel.mousePressed(() => {
+      /**
+    * ! trainModel.mousePressed(()) 
+    */
+      socket.emit('sendparts', nameSelected);
+      socket.on('receiveparts', (receiveparts) => {
+        console.log(receiveparts);
+        receivePartsGlobal = receiveparts;
+      });
       stateOfTraining = 'training';
       trainModelFromFile();
     });
@@ -90,6 +118,7 @@ if (socket) {
       pathToWeights = pathToWeights.concat('models/', nameSelected, '/model.weights.bin');
       numberOfOutputs = numberOfOutputsList[idx];
       console.log(numberOfOutputs, ' numberOfOutputs');
+      showImage();
       const options = {
         inputs: 34,
         outputs: numberOfOutputs,
@@ -99,17 +128,19 @@ if (socket) {
       console.log(numberOfOutputs, 'tutaj drukujemy numberOfOutputs przed loadingiem ćwiczenia');
       brain = ml5.neuralNetwork(options);
     };
+    nextImg.mousePressed(() => {
+      nextImage();
+    });
 
-    const options = {
-      inputs: 34,
-      outputs: numberOfOutputs,
-      task: 'classification',
-      debug: true,
-    };
-    brain = ml5.neuralNetwork(options);
+    previousImg.mousePressed(() => {
+      previousImage();
+    });
+
+    playImg.mousePressed(() => {
+      playImage();
+    });
   }
 }
-
 function trainModelFromFile() {
   console.log(pathToModel, ' pathToModel', pathToMetaData, ' pathToMetaData', pathToWeights, ' pathToWeights');
   const modelInfo = {
@@ -120,6 +151,56 @@ function trainModelFromFile() {
   brain.load(modelInfo, brainLoaded);
 }
 
+function setImage() {
+  let path;
+  path = './images/rehabilitation.png';
+  document.getElementById('exercsiepreview').style.display='block';
+  document.getElementById('exercsiepreview').src = path;
+}
+
+function showImage() {
+  let path;
+  path = './data/' + 'images/' + nameSelected + '/' + indexImg + '.png';
+  console.log(path, 'nextImage');
+  document.getElementById('exercsiepreview').src = path;
+}
+
+function nextImage() {
+  if (indexImg <= numberOfOutputs - 1) {
+    let path;
+    indexImg++;
+    path = './data/' + 'images/' + nameSelected + '/' + indexImg + '.png';
+    console.log(path, 'nextImage');
+    document.getElementById('exercsiepreview').src = path;
+  }
+}
+
+function previousImage() {
+  if (indexImg > 1) {
+    let path;
+    indexImg--;
+    path = './data/' + 'images/' + nameSelected + '/' + indexImg + '.png';
+    console.log(path, 'previous');
+    document.getElementById('exercsiepreview').src = path;
+  }
+}
+async function playImage() {
+  indexImg = 1;
+  /**
+  * TODO DELAY DODAĆ PRZY TWORZENIU ĆWICZENIA !
+  */
+  while (indexImg <= numberOfOutputs - 1) {
+    await delay(2000);
+    let path;
+    indexImg++;
+    path = './data/' + 'images/' + nameSelected + '/' + indexImg + '.png';
+    console.log(path, 'nextImage');
+    document.getElementById('exercsiepreview').src = path;
+  }
+}
+/**
+ * * PoseEstimation part
+ */
 function classifyPose() {
   if (pose) {
     const inputs = [];
@@ -130,7 +211,6 @@ function classifyPose() {
       inputs.push(y);
     }
     brain.classify(inputs, gotResult);
-    console.log(inputs, 'CO TO TE INPUTY');
   } else {
     setTimeout(classifyPose, 100);
   }
@@ -139,13 +219,10 @@ function classifyPose() {
 function gotResult(error, results) {
   if (stateOfTraining == 'training') {
     if (results[0].confidence > 0.70) {
-      console.log(results, 'drukujemy resulta');
-      console.log(results[0], 'drukujemy  PIERWSZEGO resulta');
       poseLabel = results[0].label.toUpperCase();
     } else {
       poseLabel = 'Zle ulozenie';
     }
-    console.log(results[0].confidence);
     classifyPose();
   }
 }
@@ -154,50 +231,57 @@ function brainLoaded() {
   console.log('pose classification ready!');
   classifyPose();
 }
-function createModelFromFile() {
-  console.log(nameOfSave);
-  brain.loadData(nameOfSave, dataReady);
-  // brain.loadData('data/modelTestowy.json', dataReady);
-}
-
-// function dataReady(){
-//   console.log("dataReady")
-//   brain.normalizeData()
-//   brain.train({epochs: 100}, finished);
-// }
-
-function finished() {
-  console.log('model trained');
-  brain.save();
-}
-
-function stopTraining() {
-
-}
 
 function gotPoses(poses) {
   if (poses.length > 0) {
     pose = poses[0].pose;
     skeleton = poses[0].skeleton;
-    if (state == 'collecting') {
-      // inputs = 17 x,y pairs
-      const inputs = [];
-      // this loop goes thorugh every keypoint and it's placing location into array
-      for (let i = 0; i < pose.keypoints.length; i++) {
-        const x = pose.keypoints[i].position.x;
-        const y = pose.keypoints[i].position.y;
-        inputs.push(x);
-        inputs.push(y);
-      }
-      const target = [targetLabel];
-      brain.addData(inputs, target);
-    }
   }
 }
 
 function modelLoaded() {
   console.log('poseNet ready');
 }
+
+function objectManagment(keyPoint, x, y) {
+  let xLoaded;
+  let yLoaded;
+  let xMin;
+  let xMax;
+  let yMin;
+  let yMax;
+  range = false;
+  xMin = x*0.7;
+  xMax = x + x * 0.3;
+  yMin = y*0.7;
+  yMax = y + y *0.3;
+
+  if (poseLabel == '1') {
+    xLoaded = receivePartsGlobal[keyPoint*2];
+    yLoaded = receivePartsGlobal[keyPoint*2+1];
+    console.log(xLoaded, yLoaded, 'xLoaded', xLoaded/2, yLoaded/2, 'xLoaded/2');
+  }
+  if (poseLabel == '2') {
+    xLoaded = receivePartsGlobal[keyPoint*2+32];
+    yLoaded = receivePartsGlobal[keyPoint*2+33];
+  }
+  if (poseLabel == 'Zle ulozenie') {
+    return;
+  }
+  // checkig if posX and posY are in range
+  // && xLoaded >= xMin && yLoaded <= yMin && yLoaded >= yMax)
+  if (xLoaded <= xMax && xLoaded >= xMin && yLoaded <= yMax && yLoaded >= yMin) {
+    range = true;
+    // console.log(range, 'x jest w zasięgu');
+  }
+  // console.log(x, 'x', y, 'y', keyPoint, 'keyPoint', poseLabel, 'poseLabel', range, 'range',
+  //     xLoaded, xMin, xMax, 'xLoaded', yLoaded, yMin, yMax, 'yLoaded');
+  return range;
+  // console.log(numberOfPartsLoaded, 'numberOfPartsLoaded,');
+}
+/**
+ * * Drawing
+ */
 
 function draw() {
   push();
@@ -207,19 +291,43 @@ function draw() {
   image(video, 0, 0, video.width, video.height);
 
   if (pose) {
-    for (let i = 0; i < skeleton.length; i++) {
-      const a = skeleton[i][0];
-      const b = skeleton[i][1];
-      strokeWeight(2);
-      stroke(0);
-      line(a.position.x, a.position.y, b.position.x, b.position.y);
-    }
-    for (let i = 0; i < pose.keypoints.length; i++) {
-      const x = pose.keypoints[i].position.x;
-      const y = pose.keypoints[i].position.y;
-      fill(0);
-      stroke(255);
-      ellipse(x, y, 16, 16);
+    if (stateOfTraining == 'training') {
+      for (let i = 0; i < skeleton.length; i++) {
+        const a = skeleton[i][0];
+        const b = skeleton[i][1];
+        strokeWeight(2);
+        stroke(0);
+        line(a.position.x, a.position.y, b.position.x, b.position.y);
+      }
+      for (let i = 0; i < pose.keypoints.length; i++) {
+        const x = pose.keypoints[i].position.x;
+        const y = pose.keypoints[i].position.y;
+        // must skip 2 i
+        if (objectManagment(i, x, y) == true) {
+          fill(0, 255, 0);
+          ellipse(x, y, 16, 16);
+          stroke(255);
+        } else {
+          fill(255, 0, 0);
+          ellipse(x, y, 16, 16);
+          stroke(255);
+        }
+      }
+    } else {
+      for (let i = 0; i < skeleton.length; i++) {
+        const a = skeleton[i][0];
+        const b = skeleton[i][1];
+        strokeWeight(2);
+        stroke(0);
+        line(a.position.x, a.position.y, b.position.x, b.position.y);
+      }
+      for (let i = 0; i < pose.keypoints.length; i++) {
+        const x = pose.keypoints[i].position.x;
+        const y = pose.keypoints[i].position.y;
+        fill(0);
+        stroke(255);
+        ellipse(x, y, 16, 16);
+      }
     }
   }
   pop();
@@ -227,6 +335,9 @@ function draw() {
   noStroke();
   textSize(50);
   textAlign(CENTER, CENTER);
-  text(poseLabel, width / 2, height / 2);
-  text(collectLabel, width / 2, height / 2);
+  if (poseLabel == 'Zle ulozenie') {
+    text(poseLabel, width -0.25 * width, height - 0.9*height);
+  } else {
+    text(poseLabel, width -0.1 * width, height - 0.9*height);
+  }
 }

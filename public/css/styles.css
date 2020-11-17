@@ -2,15 +2,16 @@
     background-color: whitesmoke;
     margin-left: .5rem;
     margin-right: .5rem;
-    margin-top: 1rem;
+    margin-top: 3rem;
+    position: flex; 
   }
   canvas {
     display: block;
   }
    .menu{
-    /* margin-right: .8rem; */
+    margin-right: .8rem;
     float: right; 
-    width: 30%;
+    width: 20%;
   }
   /* .nameBox {
     margin-left: .8rem;
@@ -35,4 +36,19 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+  }
+  .image {
+    flex-grow: 1;
+    /* position: flex;  */
+    float:right;
+    padding-right: 2rem;
+    /* left: 40%; */
+    /* top: 550px; */
+    /* left: 700px; */
+    /* border: 2px solid black; */
+  }
+  .title {
+    float:left;
+    /* position: flex;  */
+
   }

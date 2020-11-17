@@ -1,6 +1,11 @@
+/* eslint-disable valid-jsdoc */
 /* eslint-disable max-len */
 /* eslint-disable prefer-const */
 /* eslint-disable require-jsdoc */
+
+/**
+ * * Variables
+ */
 let socket;
 let video;
 let poseNet;
@@ -24,10 +29,14 @@ let pathToWeights = '';
 let numberOfOutputs;
 let partOfExercise;
 let tempInput = [];
-const poseCheck = [];
+let poseCheck = [];
 let check = false;
 let receivePartsGlobal = [];
 let numberOfPartsLoaded;
+let indexImg = 1;
+/**
+ * * Utilities
+ */
 function delay(time) {
   return new Promise((resolve, reject) => {
     if (isNaN(time)) {
@@ -38,7 +47,10 @@ function delay(time) {
   });
 }
 
-// Start the socket connection
+/**
+ * * Server Connection
+ * TODO CHANGE TO REST API ?
+ */
 socket = io.connect('http://localhost:3000');
 
 socket.on('nameslist', (names) => {
@@ -64,21 +76,28 @@ socket.on('numberofoutputs', (numberOfOutputs) => {
   numberOfOutputsList = numberOfOutputs;
   // after selected name get numberOfOutputs
 });
-
+/**
+ * * SetUp Functions
+ */
 if (socket) {
+  // eslint-disable-next-line no-unused-vars
   function setup() {
-    createCanvas(640, 480);
+    setImage();
+    const canvasExercsie = createCanvas(640, 480);
     video = createCapture(VIDEO);
     video.hide();
     poseNet = ml5.poseNet(video, modelLoaded);
     poseNet.on('pose', gotPoses);
-
+    canvasExercsie.parent('canvasexercise');
     // get buttons
     const collectData = select('#collectData');
     const trainModel = select('#trainModel');
     const createModel = select('#createModel');
     const saveClick = select('#saveClick');
     const stopTraining = select('#stopTrainModel');
+    const nextImg = select('#nextImg');
+    const previousImg = select('#previousImg');
+    const playImg = select('#playImg');
     // other elements
     const nameBox = select('#nameBox');
     const descriptionBox = select('#descriptionBox');
@@ -88,7 +107,6 @@ if (socket) {
     });
 
     trainModel.mousePressed(() => {
-      // let tempParts = [];
       /**
       * ! trainModel.mousePressed(()) 
       */
@@ -96,7 +114,6 @@ if (socket) {
       socket.on('receiveparts', (receiveparts) => {
         console.log(receiveparts);
         receivePartsGlobal = receiveparts;
-        numberOfPartsLoaded = receiveparts.length / 34;
       });
       stateOfTraining = 'training';
       trainModelFromFile();
@@ -120,6 +137,7 @@ if (socket) {
       pathToWeights = pathToWeights.concat('models/', nameSelected, '/model.weights.bin');
       numberOfOutputs = numberOfOutputsList[idx];
       console.log(numberOfOutputs, ' numberOfOutputs');
+      showImage();
       const options = {
         inputs: 34,
         outputs: numberOfOutputs,
@@ -129,6 +147,17 @@ if (socket) {
       console.log(numberOfOutputs, 'tutaj drukujemy numberOfOutputs przed loadingiem ćwiczenia');
       brain = ml5.neuralNetwork(options);
     };
+    nextImg.mousePressed(() => {
+      nextImage();
+    });
+
+    previousImg.mousePressed(() => {
+      previousImage();
+    });
+
+    playImg.mousePressed(() => {
+      playImage();
+    });
 
     saveClick.mousePressed(() => {
       console.log(nameBox.value());
@@ -168,7 +197,9 @@ if (socket) {
     brain = ml5.neuralNetwork(options);
   }
 }
-
+/**
+ * * After button(s) click
+ */
 async function collectClick() {
   idx = document.getElementById('numberOfParts').value;
   partsOfExercise = idx;
@@ -184,9 +215,10 @@ async function collectClick() {
     targetLabel = iAsString;
     console.log(targetLabel, ' targetLabel');
     await delay(3000);
-    collectLabel = i + '-part of exercise';
+    collectLabel = (i + '-part of exercise').toString();
     await delay(3000);
     collectLabel = 'collecting';
+    saveCanvas(i.toString(), 'png');
     check = true;
     state = 'collecting';
     await delay(8000);
@@ -209,6 +241,56 @@ function trainModelFromFile() {
   brain.load(modelInfo, brainLoaded);
 }
 
+function setImage() {
+  let path;
+  path = './images/rehabilitation.png';
+  document.getElementById('exercsiepreview').style.display='block';
+  document.getElementById('exercsiepreview').src = path;
+}
+
+function showImage() {
+  let path;
+  path = './data/' + 'images/' + nameSelected + '/' + indexImg + '.png';
+  console.log(path, 'nextImage');
+  document.getElementById('exercsiepreview').src = path;
+}
+
+function nextImage() {
+  if (indexImg <= numberOfOutputs - 1) {
+    let path;
+    indexImg++;
+    path = './data/' + 'images/' + nameSelected + '/' + indexImg + '.png';
+    console.log(path, 'nextImage');
+    document.getElementById('exercsiepreview').src = path;
+  }
+}
+
+function previousImage() {
+  if (indexImg > 1) {
+    let path;
+    indexImg--;
+    path = './data/' + 'images/' + nameSelected + '/' + indexImg + '.png';
+    console.log(path, 'previous');
+    document.getElementById('exercsiepreview').src = path;
+  }
+}
+async function playImage() {
+  indexImg = 1;
+  /**
+  * TODO DELAY DODAĆ PRZY TWORZENIU ĆWICZENIA !
+  */
+  while (indexImg <= numberOfOutputs - 1) {
+    await delay(2000);
+    let path;
+    indexImg++;
+    path = './data/' + 'images/' + nameSelected + '/' + indexImg + '.png';
+    console.log(path, 'nextImage');
+    document.getElementById('exercsiepreview').src = path;
+  }
+}
+/**
+ * * PoseEstimation part
+ */
 function classifyPose() {
   if (pose) {
     const inputs = [];
@@ -227,14 +309,10 @@ function classifyPose() {
 function gotResult(error, results) {
   if (stateOfTraining == 'training') {
     if (results[0].confidence > 0.70) {
-      // stateOfExercise is part of the exercise
-      // stateOfExercise == results[0].label;
       poseLabel = results[0].label.toUpperCase();
-      // console.log(poseLabel, 'stateOfExercise');
     } else {
       poseLabel = 'Zle ulozenie';
     }
-    // console.log(results[0].confidence);
     classifyPose();
   }
 }
@@ -260,11 +338,7 @@ function finished() {
   brain.save();
 }
 
-// function stopTraining() {
 
-// }
-// let part = 1;
-// let counter = 0;
 function gotPoses(poses) {
   if (poses.length > 0) {
     pose = poses[0].pose;
@@ -299,32 +373,51 @@ function modelLoaded() {
 }
 
 /**
- * TODO: objectManagment bierze id, zwraca odpowiednie
- * TODO: punkty z pobranej tablicy do funkcji draw tam
- * TODO: rysowane sa na czerwono
-*/
+ * * Checking if pose its close to template
+ */
 
-function objectManagment(keyPoint) {
-  let x;
-  let y;
-  let start;
-  let stop;
-  // for (let i=1; i<=numberOfPartsLoaded; i++) {
-  //   if (poseLabel == i.toString()) {
-  //     start = 1 + 17 * (i-1);
-  //     stop = 32*i;
-  //   }
+function objectManagment(keyPoint, x, y) {
+  // const canvas = document.querySelector('#canvas');
+  // const ctx = canvas.getContext('2d');
+  let xLoaded;
+  let yLoaded;
+  let xMin;
+  let xMax;
+  let yMin;
+  let yMax;
+  range = false;
+  xMin = x*0.7;
+  xMax = x + x * 0.3;
+  yMin = y*0.7;
+  yMax = y + y *0.3;
+
   if (poseLabel == '1') {
-    x = receivePartsGlobal[keyPoint*2];
-    y = receivePartsGlobal[keyPoint*2+1];
+    xLoaded = receivePartsGlobal[keyPoint*2];
+    yLoaded = receivePartsGlobal[keyPoint*2+1];
+    console.log(xLoaded, yLoaded, 'xLoaded', xLoaded/2, yLoaded/2, 'xLoaded/2');
   }
   if (poseLabel == '2') {
-    x = receivePartsGlobal[keyPoint*2+32];
-    y = receivePartsGlobal[keyPoint*2+33];
+    xLoaded = receivePartsGlobal[keyPoint*2+32];
+    yLoaded = receivePartsGlobal[keyPoint*2+33];
   }
-  console.log(x, 'x', y, 'y', keyPoint, 'keyPoint', poseLabel, 'poseLabel');
+  if (poseLabel == 'Zle ulozenie') {
+    return;
+  }
+  // checkig if posX and posY are in range
+  // && xLoaded >= xMin && yLoaded <= yMin && yLoaded >= yMax)
+  if (xLoaded <= xMax && xLoaded >= xMin && yLoaded <= yMax && yLoaded >= yMin) {
+    range = true;
+    // console.log(range, 'x jest w zasięgu');
+  }
+  // console.log(x, 'x', y, 'y', keyPoint, 'keyPoint', poseLabel, 'poseLabel', range, 'range',
+  //     xLoaded, xMin, xMax, 'xLoaded', yLoaded, yMin, yMax, 'yLoaded');
+  return range;
   // console.log(numberOfPartsLoaded, 'numberOfPartsLoaded,');
 }
+
+/**
+ * * Drawing
+ */
 
 function draw() {
   push();
@@ -335,15 +428,9 @@ function draw() {
 
   if (pose) {
     if (stateOfTraining == 'training') {
-      // console.log(receivePartsGlobal[1][1], 'aaa');
-      // console.log(receivePartsGlobal[1][3], 'receivePartsGlobal byczq333');
-      // console.log(receivePartsGlobal[1][3]," wyjebie sei")
       for (let i = 0; i < skeleton.length; i++) {
         const a = skeleton[i][0];
         const b = skeleton[i][1];
-        // const x = receivePartsGlobal[i][0];
-        // const y = receivePartsGlobal[i][1];
-        // console.log(x, y, 'aaaaaa');
         strokeWeight(2);
         stroke(0);
         line(a.position.x, a.position.y, b.position.x, b.position.y);
@@ -352,24 +439,15 @@ function draw() {
         const x = pose.keypoints[i].position.x;
         const y = pose.keypoints[i].position.y;
         // must skip 2 i
-        objectManagment(i);
-        // console.log(poseLabel, 'poseLabel');
-        // let x1 = receivePartsGlobal[i];
-        // let y1 = receivePartsGlobal[i+1];
-        // console.log(x1, y1, 'X1 i Y1');
-        // if (x != x1) {
-        //   // console.log('Złe położenie x');
-        //   fill(255, 0, 0);
-        //   stroke(255);
-        //   ellipse(x, y, 16, 16);
-        // } else {
-        //   fill(0);
-        //   stroke(255);
-        //   ellipse(x, y, 16, 16);
-        // }
-        fill(0);
-        stroke(255);
-        ellipse(x, y, 16, 16);
+        if (objectManagment(i, x, y) == true) {
+          fill(0, 255, 0);
+          ellipse(x, y, 16, 16);
+          stroke(255);
+        } else {
+          fill(255, 0, 0);
+          ellipse(x, y, 16, 16);
+          stroke(255);
+        }
       }
     } else {
       for (let i = 0; i < skeleton.length; i++) {
@@ -393,6 +471,14 @@ function draw() {
   noStroke();
   textSize(50);
   textAlign(CENTER, CENTER);
-  text(poseLabel, width / 2, height / 2);
-  text(collectLabel, width / 2, height / 2);
+  if (poseLabel == 'Zle ulozenie') {
+    text(poseLabel, width -0.25 * width, height - 0.9*height);
+  } else {
+    text(poseLabel, width -0.1 * width, height - 0.9*height);
+  }
+  if (collectLabel.length === 10) {
+    text(collectLabel, width -0.2 * width, height - 0.9*height);
+  } else {
+    text(collectLabel, width -0.4 * width, height - 0.9*height);
+  }
 }
