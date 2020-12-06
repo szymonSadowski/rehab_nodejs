@@ -1,3 +1,4 @@
+
 /* eslint-disable valid-jsdoc */
 /* eslint-disable max-len */
 /* eslint-disable prefer-const */
@@ -308,6 +309,7 @@ function classifyPose() {
 
 function gotResult(error, results) {
   if (stateOfTraining == 'training') {
+    console.log(results[0]);
     if (results[0].confidence > 0.70) {
       poseLabel = results[0].label.toUpperCase();
     } else {
@@ -394,7 +396,7 @@ function objectManagment(keyPoint, x, y) {
   if (poseLabel == '1') {
     xLoaded = receivePartsGlobal[keyPoint*2];
     yLoaded = receivePartsGlobal[keyPoint*2+1];
-    console.log(xLoaded, yLoaded, 'xLoaded', xLoaded/2, yLoaded/2, 'xLoaded/2');
+    // console.log(xLoaded, yLoaded, 'xLoaded', xLoaded/2, yLoaded/2, 'xLoaded/2');
   }
   if (poseLabel == '2') {
     xLoaded = receivePartsGlobal[keyPoint*2+32];
@@ -425,7 +427,6 @@ function draw() {
   translate(video.width, 0);
   scale(-1, 1);
   image(video, 0, 0, video.width, video.height);
-
   if (pose) {
     if (stateOfTraining == 'training') {
       for (let i = 0; i < skeleton.length; i++) {
